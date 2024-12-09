@@ -38,7 +38,14 @@
         <table id="data-table" class="table table-bordered">  
             <thead>  
                 <tr>  
-                    <th>Phone number</th>  
+                    <th>Contact ID</th>  
+                    <th>First Name</th>  
+                    <th>Last Name</th>  
+                    <th>Phone</th>  
+                    <th>Lead Status</th>  
+                    <th>Last Modified</th>  
+                    <th>Lifecycle Stage</th>  
+                    <th>Call Status</th>  
                 </tr>  
             </thead>  
             <tbody>  
@@ -57,6 +64,8 @@
         const endpoint = 'https://testingtwillo.ngrok.app/all_record';  
         const rowsPerPage = 10;  
         let currentPage = 1;  
+        let totalRecords = 0;  
+        let totalPages = 0;  
         let data = [];  
 
         // Fetch data from the endpoint  
@@ -65,12 +74,24 @@
             loadingElement.style.display = 'block'; // Show spinner  
 
             try {  
-                const response = await fetch(endpoint, { method: 'POST', mode: 'cors' });  
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        page: currentPage,
+                        rows_per_page: rowsPerPage
+                    })
+                });
+
                 if (!response.ok) {  
                     throw new Error('Network response was not ok');  
                 }  
-                const jsonData = await response.json();  
-                data = jsonData; // Assuming jsonData is an array  
+                const jsonData = await response.json();
+                data = jsonData.records; // Assuming jsonData.records is an array of records
+                totalRecords = jsonData.total_records; // Total records for pagination
+                totalPages = Math.ceil(totalRecords / rowsPerPage); // Calculate total pages
                 displayData();  
             } catch (error) {  
                 console.error('Error fetching data:', error);  
@@ -85,13 +106,16 @@
             const tableBody = document.getElementById('data-table').querySelector('tbody');  
             tableBody.innerHTML = ''; // Clear existing data  
 
-            const start = (currentPage - 1) * rowsPerPage;  
-            const end = start + rowsPerPage;  
-            const pageData = data.slice(start, end);  
-
-            pageData.forEach(item => {  
+            data.forEach(item => {  
                 const row = `<tr>  
-                    <td>${item}</td>  
+                    <td>${item[0]}</td>  
+                    <td>${item[1]}</td>  
+                    <td>${item[2]}</td>  
+                    <td>${item[3]}</td>  
+                    <td>${item[4]}</td>  
+                    <td>${item[5]}</td>  
+                    <td>${item[6]}</td>  
+                    <td>${item[7]}</td>  
                 </tr>`;  
                 tableBody.innerHTML += row;  
             });  
@@ -102,7 +126,6 @@
         // Update page information display  
         function updatePageInfo() {  
             const pageInfo = document.getElementById('page-info');  
-            const totalPages = Math.ceil(data.length / rowsPerPage);  
             pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;  
         }  
 
@@ -110,14 +133,14 @@
         document.getElementById('prev').addEventListener('click', () => {  
             if (currentPage > 1) {  
                 currentPage--;  
-                displayData();  
+                fetchData();  
             }  
         });  
 
         document.getElementById('next').addEventListener('click', () => {  
-            if (currentPage < Math.ceil(data.length / rowsPerPage)) {  
+            if (currentPage < totalPages) {  
                 currentPage++;  
-                displayData();  
+                fetchData();  
             }  
         });  
 
